@@ -1,193 +1,168 @@
-# Projeto Atlas — Controle de Estoque
+# Atlas Analytics
 
-O **Projeto Atlas** é um sistema de banco de dados relacional para controle de estoque, movimentações e auditoria, desenvolvido em MySQL com foco em **integridade, rastreabilidade e regras de negócio no nível do banco**.
+Sistema de gestão e análise de estoque desenvolvido em MySQL, projetado para simular cenários corporativos de controle operacional e geração de indicadores estratégicos para Business Intelligence.
 
-O projeto evolui de um modelo CRUD tradicional para uma arquitetura orientada a histórico, onde o estoque é sempre consequência das movimentações registradas.
+## Objetivo
 
----
+O Atlas Analytics foi criado para consolidar conceitos de modelagem de banco de dados, automação de processos, governança de dados e análise de estoque em um único projeto.
 
-## 🎯 Objetivos do Projeto
-
-* Garantir **consistência de estoque** independentemente do cliente que consome o banco
-* Centralizar **regras de negócio no banco de dados**
-* Permitir **auditoria completa** de movimentações
-* Fornecer **camada de leitura padronizada** para APIs e BI
-* Servir como projeto didático e portfólio em SQL avançado
+Além da gestão operacional, o sistema disponibiliza estruturas analíticas que podem ser consumidas por ferramentas como Power BI para construção de dashboards e indicadores de desempenho.
 
 ---
 
-## 🧱 Arquitetura Geral
+## Tecnologias Utilizadas
 
-O projeto é dividido logicamente em quatro camadas:
-
-1. **Modelo Transacional**
-   Tabelas responsáveis por dados mestres e movimentações (produtos, transações, tipos de movimentação).
-
-2. **Regras de Negócio (Triggers)**
-   Garantem integridade, bloqueios e atualização automática de estoque.
-
-3. **Camada Analítica (Views)**
-   Consolida dados para leitura, relatórios e dashboards.
-
-4. **Interface de Consumo (Procedures)**
-   Fornece operações prontas para APIs REST ou ferramentas de BI.
+- MySQL
+- SQL
+- Procedures
+- Triggers
+- Views
+- Índices
+- Modelagem Relacional
+- Business Intelligence
 
 ---
 
-## 📦 Estrutura de Tabelas
+## Estrutura do Banco
 
-### Tabelas Principais
+O banco é composto por entidades responsáveis pelo gerenciamento completo do estoque:
 
-* **categorias** — Classificação dos produtos
-* **fornecedores** — Origem dos produtos
-* **produtos** — Cadastro e estoque físico atual
-* **tipoMovimentacao** — Define impacto no estoque (entrada, saída, neutra)
-* **transacoes** — Histórico imutável de movimentações
+### Categorias
+Organização dos produtos por grupos de negócio.
 
-### Tabelas de Controle
+### Fornecedores
+Cadastro completo de fornecedores.
 
-* **periodoEstoque** — Controle de meses abertos/fechados
-* **auditoria** — Registro de ações sensíveis no sistema
+### Produtos
+Controle de produtos, estoque atual e relacionamento com categorias e fornecedores.
 
----
+### Movimentações
+Registro de entradas e saídas de estoque.
 
-## 🔐 Regras de Negócio Implementadas
+### Períodos de Estoque
+Controle de fechamento mensal para garantir integridade histórica.
 
-* Produto **não nasce com estoque**
-* Estoque inicial é registrado via movimentação específica
-* Estoque é atualizado automaticamente após cada transação
-* Estoque negativo é bloqueado antes da gravação
-* Transações **não podem ser excluídas**, apenas corrigidas
-* Correções ajustam o estoque pela diferença (não duplicam impacto)
-* Transações em períodos fechados são bloqueadas
-* Toda transação é auditada automaticamente
-
-Essas regras tornam o banco resiliente a erros de aplicação ou uso indevido.
+### Auditoria
+Registro de ações críticas realizadas no sistema.
 
 ---
 
-## ⚙️ Triggers
+## Recursos Implementados
 
-Triggers são usadas para:
+### Controle Automático de Estoque
 
-* Bloquear estoque negativo (`BEFORE INSERT`)
-* Atualizar estoque automaticamente (`AFTER INSERT`)
-* Ajustar estoque em correções (`AFTER UPDATE`)
-* Impedir exclusão de transações (`BEFORE DELETE`)
-* Bloquear lançamentos em período fechado
-* Registrar auditoria de operações
+As movimentações realizadas atualizam automaticamente os saldos dos produtos através de triggers.
 
----
+### Bloqueio de Estoque Negativo
 
-## 👁️ Views (Camada de Leitura)
+Validação automática para impedir operações que deixem o estoque inconsistente.
 
-As views padronizam consultas e evitam joins repetitivos:
+### Fechamento de Períodos
 
-* **vw_estoque_atual** — Estoque consolidado por produto
-* **vw_historico_estoque** — Histórico legível de movimentações
-* **vw_giro_estoque** — Giro estimado por produto
-* **vw_produtos_parados** — Produtos sem saída recente
-* **vw_cobertura_estoque** — Cobertura estimada em dias
-* **vw_base_curva_abc** — Base financeira da curva ABC
-* **vw_curva_abc** — Classificação ABC automática
+Impossibilita alterações em períodos já encerrados.
+
+### Auditoria de Transações
+
+Todas as operações relevantes são registradas para rastreabilidade.
+
+### Índices Otimizados
+
+Criação de índices para melhorar desempenho das consultas mais utilizadas.
 
 ---
 
-## 📊 Relatórios e Procedures
+## Camada Analítica
 
-Procedures prontas para consumo externo:
+O projeto possui views voltadas para análise de dados e apoio à tomada de decisão.
 
-* **sp_relatorio_estoque** — Visão consolidada de estoque e giro
-* **sp_historico_produto_periodo** — Histórico por produto e período
-* **sp_relatorio_curva_abc** — Curva ABC pronta para BI
-* **sp_simula_movimentacoes** — Geração de carga de teste
+### Estoque Atual
 
-Essas procedures permitem uso direto em APIs REST ou dashboards.
+Visualização consolidada dos saldos disponíveis.
 
----
+### Histórico de Estoque
 
-## 🧪 Testes e Validações
+Acompanhamento completo das movimentações realizadas.
 
-O script inclui testes para:
+### Giro de Estoque
 
-* Unicidade de categorias e fornecedores
-* Integridade referencial (FKs)
-* Bloqueio de estoque negativo
-* Atualização automática de estoque
-* Correção de transações
-* Bloqueio de exclusão
+Análise da velocidade de movimentação dos produtos.
 
-Cada falha esperada é documentada com o erro retornado pelo MySQL.
+### Produtos Parados
 
----
+Identificação de itens sem movimentação recente.
 
-## 🚀 Tecnologias Utilizadas
+### Cobertura de Estoque
 
-### Banco de Dados
+Estimativa do tempo de permanência dos produtos em estoque.
 
-* MySQL 8+
-* SQL ANSI
-* Triggers, Views e Stored Procedures
-* Window Functions
+### Curva ABC
 
-### Backend
-
-* Node.js
-* TypeScript
-* API REST
-* Acesso ao banco via Views e Stored Procedures
-
-### Frontend
-
-* React
-* TypeScript
-* Consumo de API REST
-
-### Infraestrutura
-
-* Docker
-* AWS ECS (Fargate)
-* AWS RDS (MySQL)
-* AWS Free Tier
+Classificação dos produtos de acordo com sua relevância operacional.
 
 ---
 
-## 📌 Observações de Design
+## Procedures Disponíveis
 
-* O **histórico é a fonte da verdade**
-* O estoque físico é sempre reconciliável com o estoque teórico
-* Views representam a camada oficial de leitura
-* O banco foi projetado para reduzir lógica na aplicação
+### sp_relatorio_estoque
 
----
+Geração de relatório consolidado do estoque.
 
-## 📈 Próximos Passos
+### sp_historico_produto_periodo
 
-* Implementar backend em Node.js + TypeScript
-* Criar frontend em React + TypeScript
-* Containerizar backend e frontend com Docker
-* Deploy em AWS ECS (Fargate)
-* Utilizar RDS MySQL como banco gerenciado
-* Expor API REST para consumo do frontend e BI
-* Monitoramento básico via CloudWatch
+Consulta detalhada da movimentação de produtos por período.
 
----
+### sp_relatorio_curva_abc
 
-## 🏗️ Arquitetura de Deploy
+Geração da classificação ABC.
 
-O projeto será implantado em ambiente cloud utilizando contêineres Docker.
+### sp_simula_movimentacoes
 
-Arquitetura prevista:
-
-* **Frontend**: React + TypeScript, servido via container (Nginx)
-* **Backend**: Node.js + TypeScript, exposto via API REST
-* **Banco de Dados**: MySQL em AWS RDS
-* **Orquestração**: AWS ECS (Fargate)
-
-A aplicação é stateless, permitindo escalabilidade horizontal e reinicialização segura dos containers.
+Simulação de cenários de movimentação para testes e análises.
 
 ---
 
-## 👤 Autor
+## Possibilidades de Business Intelligence
 
-Projeto desenvolvido sem uso de IA para códigos diretos, apenas revisão e filtragem de documentaçòes. foi abordado o estudo avançado de modelagem, arquitetura de bancos de dados e integração full stack, com foco em boas práticas de engenharia de software, backend e dados.
+O banco foi estruturado para integração com ferramentas analíticas como Power BI.
+
+Exemplos de indicadores:
+
+- Produtos mais movimentados
+- Giro de estoque
+- Cobertura de estoque
+- Curva ABC
+- Entradas x Saídas
+- Evolução do estoque ao longo do tempo
+- Produtos sem movimentação
+- Fornecedores com maior participação
+
+---
+
+## Aprendizados Aplicados
+
+- Modelagem de banco de dados
+- Integridade referencial
+- Normalização
+- Automação com triggers
+- Procedures
+- Otimização com índices
+- Governança de dados
+- Construção de bases analíticas para BI
+
+---
+
+## Próximos Passos
+
+- Dashboard em Power BI
+- Indicadores financeiros
+- Análises temporais
+- Alertas de estoque mínimo
+- KPIs operacionais
+
+---
+
+## Autor
+
+Paulo Sergio Brito Viana
+
+Graduando em Banco de Dados e desenvolvendo projetos voltados para SQL, modelagem de dados e Business Intelligence.
